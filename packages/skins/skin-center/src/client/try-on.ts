@@ -166,17 +166,25 @@ interface ActiveVisuals {
   neutralizeStyle: HTMLStyleElement | null
 }
 
+/** Information needed to mount + restore one live try-on session. */
+interface TryOnSession {
+  /** What is being tried on: a real skin, the official stock look, or a
+   *  custom (uploaded-image) skin. */
+  kind: 'skin' | 'official' | 'custom'
+  /** The tried-on skin, or null for official / custom. */
+  entry: SkinCenterEntry | null
+  /** Retractions this session owns (skin disposer / custom style + attr). */
+  dispose: () => void
+  /** Captured active-skin visuals, restored on exit. */
+  active: ActiveVisuals
+}
+
 /**
  * One live try-on session: owns the tried-on skin's disposer plus the
  * captured active-skin visuals, and restores everything on exit.
  */
 export class TryOnController {
-  private session: {
-    /** The tried-on skin, or null when trying on the official stock look. */
-    entry: SkinCenterEntry | null
-    dispose: () => void
-    active: ActiveVisuals
-  } | null = null
+  private session: TryOnSession | null = null
 
   /**
    * Generation counter. A newer try-on or exit increments it, so an in-flight
@@ -197,12 +205,17 @@ export class TryOnController {
   }
   /** The skin currently being tried on, if any. */
   get trying(): SkinCenterEntry | null {
-    return this.session?.entry ?? null
+    return this.session?.kind === 'skin' ? this.session.entry : null
   }
 
   /** Whether the official stock look (no skin) is being tried on. */
   get tryingOfficial(): boolean {
-    return this.session !== null && this.session.entry === null
+    return this.session !== null && this.session.kind === 'official'
+  }
+
+  /** Whether a custom (uploaded-image) skin is being tried on. */
+  get tryingCustom(): boolean {
+    return this.session !== null && this.session.kind === 'custom'
   }
 
   /** Start trying on `entry` (replaces any live session). */
@@ -227,7 +240,7 @@ export class TryOnController {
       dispose()
       return
     }
-    this.session = { entry, dispose, active }
+    this.session = { kind: 'skin', entry, dispose, active }
   }
 
   /**
@@ -236,11 +249,60 @@ export class TryOnController {
    * active skin exactly like any other try-on session.
    */
   tryOnOfficial(): void {
-    if (activeSkinEntry() === null) return
+    // Nothing to retract when the GUI has no booted skin and no live session
+    // (a real skin try-on or a custom skin) is running.
+    if (activeSkinEntry() === null && this.session === null) return
     this.exit()
     this.epoch += 1
     const active: ActiveVisuals = this.captureAndRetractActive()
-    this.session = { entry: null, dispose: () => {}, active }
+    this.session = { kind: 'official', entry: null, dispose: () => {}, active }
+  }
+
+  /** Mount a custom (uploaded-image) skin: inject a single <style> tag scoped
+   *  on body[data-dsh-skin="custom"] (the stylesheet already carries the token
+   *  remap, the body base paints, and the optional backdrop image + scrim — see
+   *  buildCustomCss), capture + retract the active skin so the custom look owns
+   *  the whole surface. The backdrop lives in the scoped stylesheet, not body
+   *  inline style, so the neutralizer that clears inline background props on
+   *  theme flips (to counter backdrop skins' ghost observers) never touches it.
+   *  On exit the attribute + tag come off and the active skin's visuals are
+   *  restored, exactly like any try-on session. */
+  tryOnCustom(options: { css: string }): void {
+    this.exit()
+    const epoch = ++this.epoch
+    const active: ActiveVisuals = this.captureAndRetractActive()
+    let dispose: (() => void) | undefined
+    try {
+      dispose = this.mountCustom(options.css)
+    } catch (error) {
+      if (epoch === this.epoch) this.restoreActive(active)
+      throw error
+    }
+    if (epoch !== this.epoch) {
+      dispose()
+      return
+    }
+    this.session = { kind: 'custom', entry: null, dispose, active }
+  }
+
+  /** Write the custom-skin style tag + the body scoping attribute. */
+  private mountCustom(css: string): () => void {
+    const body = document.body
+    body.dataset.dshSkin = 'custom'
+
+    const styleTag = document.createElement('style')
+    // Distinct marker so nothing else collides with this session's tag; the
+    // module loader owns `data-plugin`/`data-plugin-css` tags for real skins.
+    styleTag.dataset.dshCustomSkin = ''
+    styleTag.textContent = css
+    document.head.append(styleTag)
+
+    return () => {
+      delete body.dataset.dshSkin
+      styleTag.remove()
+      // The backdrop was painted by the stylesheet; nothing to clear inline.
+      // restoreActive rewrites the original body style attribute on exit.
+    }
   }
 
   /** Exit the live session: dispose the tried-on skin, then restore the active skin. */

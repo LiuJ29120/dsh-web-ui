@@ -1,17 +1,26 @@
 /**
- * Background-scrim handle for the skin center: binds the `skin-background`
- * settings namespace and applies the chosen occlusion to the page's backdrop.
+ * Background-scrim handle for the skin center: owns the occlusion value and
+ * applies it to the page's backdrop.
  *
  * Application is a CSS variable on `document.body`
  * (--dsw-skin-scrim), which backdrop-painting skins (blue-fantasy /
- * whale-song) read inside their setBackdrop() so the veil stays in sync across
- * theme flips and try-on restores. The official stock look paints no backdrop,
- * so the variable is inert there — the value still persists so it is ready for
- * the next backdrop skin.
+ * whale-song) and the custom (upload-image) skin read inside their backdrop so
+ * the veil stays in sync across theme flips and try-on restores. The official
+ * stock look paints no backdrop, so the variable is inert there — the value
+ * still persists so it is ready for the next backdrop skin.
  *
  * Values are 0-100 (0 = no extra veil, 100 = fully obscured); they are written
  * through as a 0..1 alpha for the CSS variable. Dragging the control applies
- * instantly (live) and persists through the settings scope.
+ * instantly (live) and persists to localStorage.
+ *
+ * Persistence: the value is stored in localStorage (key
+ * dsh-skin-center:backgroundOpacity) rather than the settings scope. The
+ * settings-scope write is a client RPC that was observed never reaching the
+ * host's settings.yaml (the section never registered), so persistence there
+ * silently failed and the value reset to 0 on reload. localStorage is the same
+ * single-machine mechanism already used by the custom skin record and is
+ * reliable. The bound settings scope is still accepted (for construction-site
+ * compatibility and a first-read fallback) but is no longer the source of truth.
  */
 import type { SettingsScope, SettingsScopeSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
 
@@ -24,7 +33,10 @@ export const OPACITY_FIELD = 'backgroundOpacity'
 /** CSS custom property written to document.body and read by backdrop skins. */
 export const SCRIM_VAR = '--dsw-skin-scrim'
 
-/** Default occlusion (0 = no extra veil) when the section carries none. */
+/** localStorage key that persists the occlusion across reloads. */
+export const BACKGROUND_STORAGE_KEY = 'dsh-skin-center:backgroundOpacity'
+
+/** Default occlusion (0 = no extra veil) when nothing is stored. */
 export const DEFAULT_OPACITY = 0
 
 /** The face the skin-center card injects for the background control. */
@@ -38,8 +50,10 @@ export interface SkinBackgroundHandle {
 }
 
 /**
- * Own the skin-background scope: read the latest occlusion, apply it to the
- * body CSS variable instantly, and persist changes through the settings scope.
+ * Own the background occlusion: restore it from localStorage (with a first-read
+ * fallback to the settings scope so any previously stored value migrates),
+ * apply it to the body CSS variable instantly, and persist changes to
+ * localStorage. The public handle surface is unchanged.
  */
 export class BackgroundController implements SkinBackgroundHandle {
   private value = DEFAULT_OPACITY
@@ -47,16 +61,21 @@ export class BackgroundController implements SkinBackgroundHandle {
   private readonly scope: SettingsScope<{ backgroundOpacity?: number }>
 
   /**
-   * @param scope - the bound skin-background settings scope.
+   * @param scope - the bound settings scope (accepted for compatibility and as
+   * a first-read fallback; localStorage is now the source of truth).
    */
   constructor(scope: SettingsScope<{ backgroundOpacity?: number }>) {
     this.scope = scope
     this.value = this.read()
     this.apply()
+    // If the settings scope happens to change (e.g. another source wrote it),
+    // reflect that too — localStorage still wins on the next explicit set.
     scope.subscribe(() => {
-      this.value = this.read()
-      this.apply()
-      this.publish()
+      if (this.readFromStorage() === null) {
+        this.value = this.readFromScope()
+        this.apply()
+        this.publish()
+      }
     })
   }
 
@@ -72,17 +91,46 @@ export class BackgroundController implements SkinBackgroundHandle {
     this.value = clamped
     this.apply()
     this.publish()
-    // Persist: queue the write on the settings scope. Failures are silent —
-    // the live value is already applied, and the write drains on reconnect.
-    void this.scope.set(OPACITY_FIELD, clamped)
+    // Persist to localStorage; a quota/storage failure is silent — the live
+    // value is already applied, it just won't survive a reload.
+    this.writeToStorage(clamped)
   }
 
-  /** The effective section value, clamped 0-100, defaulting to 0. */
+  /** Effective value: stored localStorage, else the settings scope, else 0. */
   private read(): number {
+    const stored = this.readFromStorage()
+    if (stored !== null) return stored
+    return this.readFromScope()
+  }
+
+  private readFromStorage(): number | null {
+    try {
+      const raw = window.localStorage.getItem(BACKGROUND_STORAGE_KEY)
+      if (raw === null) return null
+      const n = Number(raw)
+      if (!Number.isFinite(n)) {
+        window.localStorage.removeItem(BACKGROUND_STORAGE_KEY)
+        return null
+      }
+      return Math.max(0, Math.min(100, Math.round(n)))
+    } catch {
+      return null
+    }
+  }
+
+  private readFromScope(): number {
     const snapshot: SettingsScopeSnapshot<{ backgroundOpacity?: number }> = this.scope.getSnapshot()
     const raw = snapshot.value?.backgroundOpacity
     if (typeof raw !== 'number' || !Number.isFinite(raw)) return DEFAULT_OPACITY
     return Math.max(0, Math.min(100, raw))
+  }
+
+  private writeToStorage(opacity: number): void {
+    try {
+      window.localStorage.setItem(BACKGROUND_STORAGE_KEY, String(opacity))
+    } catch {
+      // ignore quota / disabled-storage errors
+    }
   }
 
   /** Write the current occlusion onto the body CSS variable (0..1 alpha). */

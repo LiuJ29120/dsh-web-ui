@@ -29,6 +29,26 @@ export type SkinCenterKey =
   | 'backgroundOpacity'
   | 'backgroundHint'
   | 'backgroundHintInert'
+  | 'custom'
+  | 'customTagline'
+  | 'pickImage'
+  | 'customize'
+  | 'browseImage'
+  | 'dropHint'
+  | 'imageHint'
+  | 'seedsTitle'
+  | 'seedAccent'
+  | 'seedSecondary'
+  | 'seedSurface'
+  | 'seedText'
+  | 'darkImage'
+  | 'lightImage'
+  | 'applyCustom'
+  | 'appliedCustom'
+  | 'exitCustom'
+  | 'clearCustom'
+  | 'currentTheme'
+  | 'decodeFailed'
 
 export const en: Record<SkinCenterKey, string> = {
   title: 'Skin Center',
@@ -54,6 +74,26 @@ export const en: Record<SkinCenterKey, string> = {
   backgroundOpacity: 'Background occlusion',
   backgroundHint: 'Instantly veils the backdrop behind the panels — higher values obscure the art to help you focus.',
   backgroundHintInert: 'Only applies to skins that paint a backdrop (Blue Fantasy / Whale Song). Applies to the official default automatically once such a skin is active.',
+  custom: 'Custom (pick an image)',
+  customTagline: 'Upload a photo and generate a bespoke skin palette on the fly.',
+  pickImage: 'Choose a PNG / JPG / WebP image',
+  customize: 'Customize your own look',
+  browseImage: 'Browse image',
+  dropHint: 'Colors and a light/dark direction are read from the selected picture — everything happens locally in this browser, nothing is uploaded.',
+  imageHint: 'Pick a picture to preview its palette before applying.',
+  seedsTitle: 'Derived palette',
+  seedAccent: 'Accent',
+  seedSecondary: 'Secondary',
+  seedSurface: 'Surface',
+  seedText: 'Text',
+  darkImage: 'Dark image',
+  lightImage: 'Light image',
+  applyCustom: 'Apply',
+  appliedCustom: 'Applied — exit restores instantly',
+  exitCustom: 'Exit custom look',
+  clearCustom: 'Clear custom skin',
+  currentTheme: 'Current theme',
+  decodeFailed: 'Could not read that image — try a PNG, JPG or WebP.',
 }
 
 export const zh: Record<SkinCenterKey, string> = {
@@ -80,4 +120,24 @@ export const zh: Record<SkinCenterKey, string> = {
   backgroundOpacity: '背景遮挡',
   backgroundHint: '即时为面板背后的背景加遮罩——数值越高越能弱化插画，帮你集中注意力。',
   backgroundHintInert: '仅对带背景图插画的皮肤（蓝色幻想 / 鲸吟）生效；官方默认无背景图，该滑块对这些皮肤自动生效。',
+  custom: '自定义（上传图片）',
+  customTagline: '上传一张图片，即时生成专属配色皮肤。',
+  pickImage: '选择 PNG / JPG / WebP 图片',
+  customize: '定制你的专属外观',
+  browseImage: '选择图片',
+  dropHint: '从图片中提取主色、次色、底色与文字色，并判断明暗方向——全程在本浏览器本地完成，不会上传到服务器。',
+  imageHint: '选择一张图片先预览配色，再一键应用。',
+  seedsTitle: '提取配色',
+  seedAccent: '主色',
+  seedSecondary: '次色',
+  seedSurface: '底色',
+  seedText: '文字色',
+  darkImage: '偏暗图片',
+  lightImage: '偏亮图片',
+  applyCustom: '应用',
+  appliedCustom: '已应用——退出即完全还原',
+  exitCustom: '退出自定义外观',
+  clearCustom: '清除自定义皮肤',
+  currentTheme: '当前主题',
+  decodeFailed: '无法读取该图片，请换用 PNG / JPG / WebP 格式。',
 }

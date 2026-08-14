@@ -1,10 +1,28 @@
-# dsh-web-ui · DSH Web UI
+# dsh-web-ui-enhanced · DSH Web UI（增强版）
+
+> **本仓库是 [zhu1090093659/dsh-web-ui](https://github.com/zhu1090093659/dsh-web-ui) 的二次开发分支（Fork）。**
+>
+> - 原项目作者：**zhu1090093659**，许可：[BSD-3-Clause](LICENSE)（见各包 LICENSE）
+> - 本分支新增功能：**皮肤中心「传图生成自定义皮肤」**（上传图片 → 浏览器本地取色 → 推导整套 DSH 配色 token → 背景铺满 + 可读性遮罩 + 背景透明度持久化；刷新自动恢复）
+> - 改动范围：仅 `packages/skins/skin-center/`（皮肤中心插件），未改动 DSH 源码、未改动其他插件包
+> - 安装方式与原项目一致（见下文「安装」）
 
 中文 | [English](README.en.md)
 
 ![dsh-web-ui](docs/dsh-web-ui-banner.png)
 
 dsh-web-ui 是 DeepSeek Harness（DSH）Web UI 的插件与皮肤集合：任务看板、Git 图谱、右侧面板、移动端远程、远程连接、鲸鱼娘宠物、实时令牌统计，以及皮肤中心。所有插件既可独立安装，也可通过聚合包一次装齐。
+
+## 本分支新增：传图生成自定义皮肤
+
+皮肤中心（`dsh-skins` → 皮肤中心）新增「自定义（选图）」卡片：
+
+1. 选择一张 PNG / JPG / WebP 图片，**浏览器本地**解码（不上传服务器）
+2. 自动提取 4 个种子色（主色 / 次色 / 底色 / 文字色）并实时预览色卡
+3. 从种子色推导整套 DSH `--dsw-*` 配色 token（OKLab 插值，保持对比度与层次感）
+4. 图片铺满为背景（面板半透明透出，带可读性遮罩），亮/暗主题自动适配
+5. 「背景透明度」滑块实时调节遮罩，值持久化（刷新保留）
+6. 应用后自动持久化，刷新页面自动恢复；支持「清除自定义皮肤」还原
 
 ![DSH Web UI 主界面](docs/screenshots/13-hero-main.png)
 
@@ -121,6 +139,30 @@ dsh-web-ui 是 DeepSeek Harness（DSH）Web UI 的插件与皮肤集合：任务
 ## 安装
 
 DSH 插件通过 `dsh plugin` 命令安装进 **profile**（`dsh web` 对应 `web` profile）。推荐直接安装聚合包 `dsh-web-ui-all`——一个包装齐全部功能插件与皮肤；只想用皮肤则装 `dsh-skins`。
+
+### 本分支（含传图生成皮肤）推荐：从源码链接安装
+
+本分支新增的「传图生成自定义皮肤」在 `packages/skins/skin-center/`，尚未发布到 npm，请用源码链接方式安装：
+
+```sh
+# 1. 克隆本仓库
+git clone https://github.com/LiuJ29120/dsh-web-ui.git
+cd dsh-web-ui
+
+# 2. 安装依赖并构建（首次）
+pnpm install
+pnpm --filter @linxin666/dsh-client-ui-skin-center run build
+
+# 3. 把插件链接进 web profile（皮肤中心需要配套的插件配置分组）
+node scripts/link-profile.mjs
+dsh plugin --profile web add link:$(pwd)/packages/dsh-web-ui-settings
+dsh plugin --profile web add link:$(pwd)/packages/dsh-skins
+
+# 4. 重启 dsh web
+dsh web
+```
+
+重启后进入 **设置 → 插件配置 → 皮肤中心**，即可看到「自定义（选图）」卡片（传图生成皮肤）。
 
 ### 方式一：从 npm 安装（推荐）
 

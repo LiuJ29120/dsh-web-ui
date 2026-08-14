@@ -363,6 +363,139 @@ body[data-dsh-skin-center] .backgroundHintMuted {
   color: var(--dsw-alias-label-tertiary, #9aa4b5);
 }
 
+/* --- Custom (upload-image) skin card ------------------------------------- */
+
+body[data-dsh-skin-center] .customBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body[data-dsh-skin-center] .customHint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-secondary, #6b7280);
+}
+
+body[data-dsh-skin-center] .customPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body[data-dsh-skin-center] .fileButton {
+  font-size: 12.5px;
+  line-height: 1;
+  padding: 8px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--dsw-alias-border-l3, #cbd5e1);
+  background: var(--dsw-alias-bg-layer-2, #ffffff);
+  color: var(--dsw-alias-label-primary, #172a45);
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+/* The hidden <input type=file> the browse button opens. */
+body[data-dsh-skin-center] .fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+body[data-dsh-skin-center] .fileButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+body[data-dsh-skin-center] .fileButton:hover {
+  border-color: var(--dsw-alias-brand-primary, #2b7cd9);
+  color: var(--dsw-alias-brand-primary, #1e63b8);
+}
+
+body[data-dsh-skin-center] .fileButton:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary, #2b7cd9);
+  outline-offset: 2px;
+}
+
+/* The 4-seed preview row: a swatch tile + hex, one per extracted color. */
+body[data-dsh-skin-center] .seedsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body[data-dsh-skin-center] .seedsTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary, #172a45);
+}
+
+body[data-dsh-skin-center] .seedsDirection {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--dsw-alias-state-success-primary, #0f6b3a);
+  background: var(--dsw-alias-state-success-tertiary, #dcf3e5);
+}
+
+body[data-dsh-skin-center] .swatchRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+body[data-dsh-skin-center] .swatchCell {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: stretch;
+}
+
+body[data-dsh-skin-center] .swatchBlock {
+  height: 34px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-border-l4, rgb(15 23 42 / 0.12));
+}
+
+body[data-dsh-skin-center] .swatchLabel {
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary, #9aa4b5);
+}
+
+body[data-dsh-skin-center] .swatchHex {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-primary, #172a45);
+}
+
+body[data-dsh-skin-center] .customActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* The cover-image thumbnail shown once a custom seed palette is loaded /
+   applied; a "current theme" peek at the stored backdrop art. */
+body[data-dsh-skin-center] .customThumb {
+  display: block;
+  width: 100%;
+  max-height: 130px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l1, #e2e8f0);
+  background: var(--dsw-alias-bg-layer-2, #ffffff);
+}
+
 /* Respect users who disable motion: no transitioned state changes. */
 @media (prefers-reduced-motion: reduce) {
   body[data-dsh-skin-center] .cardHeader,

@@ -15,6 +15,7 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import { SkinCenter, type SkinCenterInjected } from './SkinCenter.tsx'
 import { BackgroundController, SKIN_BACKGROUND_NS } from './background.ts'
+import { restorePersistedCustomSkin } from './custom/index.ts'
 import { en, zh, type SkinCenterKey } from './locales.ts'
 import { TryOnController } from './try-on.ts'
 
@@ -79,6 +80,19 @@ export function apply(ctx: ClientContext): void {
 
   const theme = ctx.get('theme') as ThemeRuntime
   const controller = new TryOnController()
+
+  // Restore a persisted custom skin on page load, so the current theme comes
+  // back before the user ever opens the settings panel. This runs in an effect
+  // (the plugin's client apply executes once the DOM/body exists) and is a
+  // one-shot: restorePersistedCustomSkin no-ops once it has already re-entered
+  // the saved skin this page load; after a reload the module flag resets and it
+  // runs again. The session is owned by the controller (like any try-on), not by
+  // this fiber, so its disposer intentionally does nothing extra.
+  ctx.effect(() => {
+    restorePersistedCustomSkin(controller)
+    return () => {}
+  }, 'ui-skin-center: restore persisted custom skin')
+
   // Background occluder over the shared skin-background namespace. The scope
   // is bound to this plugin's fiber, so it is torn down with the card.
   const binder = ctx.get('webUiSettings') ?? ctx.settingsScope
